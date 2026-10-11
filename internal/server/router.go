@@ -7,6 +7,7 @@ import (
 
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
+	"github.com/amanuel-tk/Booking-Api/internal/user"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -16,9 +17,10 @@ import (
 )
 
 type Deps struct {
-	DB  *pgxpool.Pool
-	RDB *redis.Client
-	JWT *auth.JWTManager
+	DB   *pgxpool.Pool
+	RDB  *redis.Client
+	JWT  *auth.JWTManager
+	User *user.Handler
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -47,6 +49,8 @@ func NewRouter(d Deps) http.Handler {
 		httpx.WriteJSON(w, code, status)
 
 	})
+
+	r.Post("/register", d.User.Register)
 
 	return r
 

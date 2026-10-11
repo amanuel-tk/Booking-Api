@@ -14,6 +14,7 @@ import (
 	"github.com/amanuel-tk/Booking-Api/internal/config"
 	"github.com/amanuel-tk/Booking-Api/internal/database"
 	"github.com/amanuel-tk/Booking-Api/internal/server"
+	"github.com/amanuel-tk/Booking-Api/internal/user"
 )
 
 func main() {
@@ -44,12 +45,17 @@ func main() {
 
 	jwtm := auth.NewJWTManager(cfg.JWTSecret, cfg.AccessTokenTTL)
 
+	userRepo := user.NewRepository(db)
+	userService := user.NewService(userRepo, jwtm)
+	userHandler := user.NewHandler(userService)
+
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
 		Handler: server.NewRouter(server.Deps{
-			DB:  db,
-			RDB: rdb,
-			JWT: jwtm,
+			DB:   db,
+			RDB:  rdb,
+			JWT:  jwtm,
+			User: userHandler,
 		}),
 		ReadTimeout: 5 * time.Second,
 	}
