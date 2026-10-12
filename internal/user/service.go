@@ -2,17 +2,24 @@ package user
 
 import (
 	"context"
+	"errors"
 	"net/mail"
 	"strings"
 
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
 )
 
+var ErrInvalidCredentials = errors.New("invalid credentials")
+
 type RegisterRequest struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
+}
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type ValidationError struct {
@@ -70,4 +77,26 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*User, err
 
 	u.Roles = []string{"user"}
 	return u, nil
+}
+
+func (s *Service) Login(ctx context.Context, req LoginRequest) (string, *User, error) {
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	u, err := s.users.GetByEmail(ctx, email)
+
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return "", nil, ErrInvalidCredentials
+		}
+		return "", nil, err
+	}
+	if !u.IsActive || !auth.CheckPassword(u.PasswordHash, req.Password) {
+		return "", nil, ErrInvalidCredentials
+	}
+	token, err := s.jwt.Generate(u.ID, u.Roles, u.Permissions)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return token, u, nil
 }
