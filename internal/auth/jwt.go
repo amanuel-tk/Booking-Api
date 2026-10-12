@@ -35,7 +35,7 @@ func (m *JWTManager) Generate(userID string, roles, perms []string) (string, err
 			ExpiresAt: jwt.NewNumericDate(now.Add(m.ttl)),
 		},
 	}
-	return jwt.NewWithClaims(jwt.SigningMethodES256, claims).SignedString(m.secret)
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(m.secret)
 }
 
 func (m *JWTManager) Parse(raw string) (*Claims, error) {

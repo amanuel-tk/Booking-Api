@@ -51,6 +51,7 @@ func NewRouter(d Deps) http.Handler {
 	})
 
 	r.Post("/register", d.User.Register)
+	r.Post("/login", d.User.Login)
 
 	return r
 
