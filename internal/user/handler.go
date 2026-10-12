@@ -42,3 +42,28 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	httpx.WriteJSON(w, http.StatusCreated, u)
 }
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var req LoginRequest
+	if !httpx.DecodeJson(w, r, &req) {
+		return
+	}
+
+	token, u, err := h.svc.Login(r.Context(), req)
+
+	if err != nil {
+		if errors.Is(err, ErrInvalidCredentials) {
+			httpx.WriteError(w, http.StatusUnauthorized, "invalid email or password")
+			return
+		}
+		log.Printf("login %v", err)
+		httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{
+		"access_token": token,
+		"token_type":   "Bearer",
+		"user":         u,
+	})
+}
