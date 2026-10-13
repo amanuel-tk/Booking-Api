@@ -51,8 +51,8 @@ func RequireRole(allowed ...string) func(http.Handler) http.Handler {
 					return
 				}
 
-				httpx.WriteError(w, http.StatusForbidden, "forbidden")
 			}
+			httpx.WriteError(w, http.StatusForbidden, "forbidden")
 		})
 	}
 }

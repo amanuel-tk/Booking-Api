@@ -53,6 +53,11 @@ func NewRouter(d Deps) http.Handler {
 	r.Post("/register", d.User.Register)
 	r.Post("/login", d.User.Login)
 
+	r.Route("/api", func(r chi.Router) {
+		r.Use(d.JWT.Authenticate)
+		r.Get("/me", d.User.Me)
+	})
+
 	return r
 
 }

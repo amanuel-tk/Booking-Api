@@ -67,3 +67,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		"user":         u,
 	})
 }
+
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "logged in"})
+}
