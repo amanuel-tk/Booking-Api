@@ -13,6 +13,7 @@ import (
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
 	"github.com/amanuel-tk/Booking-Api/internal/config"
 	"github.com/amanuel-tk/Booking-Api/internal/database"
+	"github.com/amanuel-tk/Booking-Api/internal/movie"
 	"github.com/amanuel-tk/Booking-Api/internal/server"
 	"github.com/amanuel-tk/Booking-Api/internal/user"
 )
@@ -49,13 +50,18 @@ func main() {
 	userService := user.NewService(userRepo, jwtm)
 	userHandler := user.NewHandler(userService)
 
+	movieRepo := movie.NewRepository(db)
+	movieService := movie.NewService(movieRepo)
+	movieHandler := movie.NewHandler(movieService)
+
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
 		Handler: server.NewRouter(server.Deps{
-			DB:   db,
-			RDB:  rdb,
-			JWT:  jwtm,
-			User: userHandler,
+			DB:    db,
+			RDB:   rdb,
+			JWT:   jwtm,
+			User:  userHandler,
+			Movie: movieHandler,
 		}),
 		ReadTimeout: 5 * time.Second,
 	}
