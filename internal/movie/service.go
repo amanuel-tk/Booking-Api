@@ -2,6 +2,7 @@ package movie
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 )
@@ -77,4 +78,18 @@ func (s *Service) Create(ctx context.Context, req CreateRequest) (*Movie, error)
 
 	return m, nil
 
+}
+
+func (s *Service) ListMovies(ctx context.Context, search string, limit, page int) ([]Movie, int, error) {
+
+	log.Print("search")
+	log.Print(search)
+
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	if page < 1 {
+		page = 1
+	}
+	return s.repo.ListMovies(ctx, search, limit, (page-1)*limit)
 }

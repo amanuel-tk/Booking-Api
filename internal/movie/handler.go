@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
 )
@@ -40,4 +41,27 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	httpx.WriteJSON(w, http.StatusOK, m)
 
+}
+
+func (h *Handler) ListMovies(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	limit, _ := strconv.Atoi(q.Get("limit"))
+	page, _ := strconv.Atoi(q.Get("page"))
+
+	movies, total, err := h.svc.ListMovies(r.Context(), q.Get("q"), limit, page)
+
+	if err != nil {
+		log.Printf("list movies: %v", err)
+		httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	res := map[string]any{
+		"movies": movies,
+		"page":   page,
+		"limit":  limit,
+		"total":  total,
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, res)
 }
