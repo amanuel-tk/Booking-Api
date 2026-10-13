@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
+	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
@@ -64,4 +65,20 @@ func (h *Handler) ListMovies(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.WriteJSON(w, http.StatusOK, res)
+}
+
+func (h *Handler) GetMovie(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	m, err := h.svc.GetMovie(r.Context(), id)
+
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			httpx.WriteError(w, http.StatusNotFound, ErrNotFound.Error())
+			return
+		}
+		httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+	}
+
+	httpx.WriteJSON(w, http.StatusOK, m)
 }

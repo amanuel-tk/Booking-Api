@@ -2,9 +2,10 @@ package movie
 
 import (
 	"context"
-	"log"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -82,9 +83,6 @@ func (s *Service) Create(ctx context.Context, req CreateRequest) (*Movie, error)
 
 func (s *Service) ListMovies(ctx context.Context, search string, limit, page int) ([]Movie, int, error) {
 
-	log.Print("search")
-	log.Print(search)
-
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
@@ -92,4 +90,13 @@ func (s *Service) ListMovies(ctx context.Context, search string, limit, page int
 		page = 1
 	}
 	return s.repo.ListMovies(ctx, search, limit, (page-1)*limit)
+}
+
+func (s *Service) GetMovie(ctx context.Context, id string) (*Movie, error) {
+
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, ErrNotFound
+	}
+
+	return s.repo.GetMovie(ctx, id)
 }

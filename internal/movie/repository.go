@@ -2,9 +2,13 @@ package movie
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrNotFound = errors.New("movie not found")
 
 type Repository struct {
 	db *pgxpool.Pool
@@ -58,4 +62,17 @@ func (r *Repository) ListMovies(ctx context.Context, search string, limit, offse
 		movies = append(movies, m)
 	}
 	return movies, total, rows.Err()
+}
+
+func (r *Repository) GetMovie(ctx context.Context, id string) (*Movie, error) {
+	var m Movie
+	err := r.db.QueryRow(ctx, `SELECT `+columns+` FROM movies WHERE id=$1 AND is_active`, id).Scan(&m.ID, &m.Title, &m.Description, &m.DurationMinutes, &m.Language, &m.Genres, &m.ReleaseDate, &m.PosterURL, &m.IsActive, &m.CreatedAt, &m.UpdatedAt)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
 }
