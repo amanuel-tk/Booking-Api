@@ -65,6 +65,7 @@ func NewRouter(d Deps) http.Handler {
 
 		r.With(auth.RequireRole("admin")).Post("/movies", d.Movie.Create)
 		r.With(auth.RequireRole("admin")).Post("/theater", d.Theater.CreateTheater)
+		r.With(auth.RequireRole("admin")).Post("/screen/{id}", d.Theater.CreateScreen)
 
 	})
 

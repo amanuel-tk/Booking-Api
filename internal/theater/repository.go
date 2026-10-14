@@ -3,7 +3,9 @@ package theater
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -25,8 +27,7 @@ const (
 )
 
 func pgCode(err error) string {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 		return pgErr.Code
 	}
 	return ""
@@ -42,4 +43,47 @@ func (r *Repository) CreateTheater(ctx context.Context, t *Theater) error {
 		return err
 	}
 	return nil
+}
+
+func (r *Repository) CreateScreenWithSeats(ctx context.Context, s *Screen, seats []Seat) error {
+	tx, err := r.db.Begin(ctx)
+
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	err = tx.QueryRow(ctx, "INSERT INTO screens (theater_id,name,row_count,seats_per_row) VALUES ($1,$2,$3,$4) RETURNING id,is_active,created_at,updated_at", s.TheaterID, s.Name, s.RowCount, s.SeatsPerRow).Scan(&s.ID, &s.IsActive, &s.CreatedAt, &s.UpdatedAt)
+
+	if err != nil {
+		switch pgCode(err) {
+		case pgUniqueViolation:
+			return ErrScreenNameTaken
+		case pgForeignKeyViolation, pgInvalidText:
+			return ErrNotFound
+		}
+		return err
+	}
+
+	rows := make([][]any, len(seats))
+
+	for i, seat := range seats {
+		rows[i] = []any{s.ID, seat.RowLabel, seat.SeatNumber}
+	}
+
+	n, err := tx.CopyFrom(ctx, pgx.Identifier{"seats"}, []string{"screen_id", "row_label", "seat_number"}, pgx.CopyFromRows(rows))
+
+	if err != nil {
+		return fmt.Errorf("seat copy:%w", err)
+	}
+	if int(n) != len(seats) {
+		return fmt.Errorf("copy seats: inserted %d of %d", n, len(seats))
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+
+	return nil
+
 }

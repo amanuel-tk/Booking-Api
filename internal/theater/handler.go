@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
+	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
@@ -44,4 +45,37 @@ func (h *Handler) CreateTheater(w http.ResponseWriter, r *http.Request) {
 	}
 	httpx.WriteJSON(w, http.StatusCreated, t)
 
+}
+
+func (h *Handler) CreateScreen(w http.ResponseWriter, r *http.Request) {
+	theaterID := chi.URLParam(r, "id")
+
+	var req createScreenRequest
+
+	if !httpx.DecodeJson(w, r, &req) {
+		return
+	}
+
+	screen, err := h.svc.CreateScreen(r.Context(), theaterID, req)
+
+	if err != nil {
+		var ve ValidationError
+		switch {
+		case errors.Is(err, ErrNotFound):
+			httpx.WriteError(w, http.StatusNotFound, "not found")
+			return
+		case errors.As(err, &ve):
+			httpx.WriteError(w, http.StatusBadRequest, ve.Msg)
+			return
+		case errors.Is(err, ErrScreenNameTaken):
+			httpx.WriteError(w, http.StatusConflict, ErrScreenNameTaken.Error())
+			return
+		default:
+			log.Printf("creating screen: %v", err)
+			httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+	}
+
+	httpx.WriteJSON(w, http.StatusCreated, screen)
 }
