@@ -38,9 +38,10 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("create movie: %v", err)
 		httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, m)
+	httpx.WriteJSON(w, http.StatusCreated, m)
 
 }
 
