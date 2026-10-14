@@ -90,6 +90,29 @@ func (s *Service) GetTheaters(ctx context.Context) ([]Theater, error) {
 	return s.repo.GetTheaters(ctx)
 }
 
+func (s *Service) GetScreen(ctx context.Context, id string) (*ScreenLayout, error) {
+	screen, err := s.repo.GetScreen(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	seats, err := s.repo.ListSeats(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	layout := &ScreenLayout{Screen: *screen, Rows: []SeatRow{}}
+	for _, seat := range seats {
+		n := len(layout.Rows)
+		if n == 0 || layout.Rows[n-1].Row != seat.RowLabel {
+			layout.Rows = append(layout.Rows, SeatRow{Row: seat.RowLabel})
+			n++
+		}
+		layout.Rows[n-1].Seats = append(layout.Rows[n-1].Seats, seat)
+	}
+	return layout, nil
+}
+
 func GenerateSeats(rows, seatsPerRow int) ([]Seat, error) {
 	if rows < 1 || rows > MaxRows {
 		return nil, ValidationError{"rows must be between 1 and 26"}

@@ -59,6 +59,7 @@ func NewRouter(d Deps) http.Handler {
 	r.Get("/movies", d.Movie.ListMovies)
 	r.Get("/movie/{id}", d.Movie.GetMovie)
 	r.Get("/theater", d.Theater.GetTheaters)
+	r.Get("/screen/{id}", d.Theater.GetScreen)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(d.JWT.Authenticate)

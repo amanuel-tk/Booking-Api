@@ -112,3 +112,50 @@ func (r *Repository) GetTheaters(ctx context.Context) ([]Theater, error) {
 	}
 	return theaters, nil
 }
+
+func (r *Repository) GetScreen(ctx context.Context, id string) (*Screen, error) {
+	const q = `
+		SELECT id, theater_id, name, row_count, seats_per_row, is_active, created_at, updated_at
+		FROM screens
+		WHERE id = $1 AND is_active = true`
+
+	var s Screen
+	err := r.db.QueryRow(ctx, q, id).Scan(
+		&s.ID, &s.TheaterID, &s.Name, &s.RowCount, &s.SeatsPerRow,
+		&s.IsActive, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) || pgCode(err) == pgInvalidText {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *Repository) ListSeats(ctx context.Context, screenID string) ([]Seat, error) {
+	const q = `
+		SELECT id, screen_id, row_label, seat_number
+		FROM seats
+		WHERE screen_id = $1
+		ORDER BY row_label, seat_number`
+
+	rows, err := r.db.Query(ctx, q, screenID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var seats []Seat
+	for rows.Next() {
+		var s Seat
+		if err := rows.Scan(&s.ID, &s.ScreenID, &s.RowLabel, &s.SeatNumber); err != nil {
+			return nil, err
+		}
+		seats = append(seats, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return seats, nil
+}

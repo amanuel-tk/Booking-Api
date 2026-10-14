@@ -90,3 +90,13 @@ func (h *Handler) GetTheaters(w http.ResponseWriter, r *http.Request) {
 	}
 	httpx.WriteJSON(w, http.StatusOK, t)
 }
+
+func (h *Handler) GetScreen(w http.ResponseWriter, r *http.Request) {
+	layout, err := h.svc.GetScreen(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		log.Printf("getting screen: %v", err)
+		httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, layout)
+}
