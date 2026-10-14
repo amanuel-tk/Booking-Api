@@ -87,3 +87,28 @@ func (r *Repository) CreateScreenWithSeats(ctx context.Context, s *Screen, seats
 	return nil
 
 }
+
+func (r *Repository) GetTheaters(ctx context.Context) ([]Theater, error) {
+	theaters := []Theater{}
+
+	rows, err := r.db.Query(ctx, "SELECT id,name,city,is_active,created_at,updated_at FROM theaters where is_active ORDER BY created_at")
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var t Theater
+
+		if err := rows.Scan(&t.ID, &t.Name, &t.City, &t.IsActive, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return nil, err
+		}
+		theaters = append(theaters, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return theaters, nil
+}

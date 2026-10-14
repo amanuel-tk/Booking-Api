@@ -86,6 +86,10 @@ func (s *Service) CreateScreen(ctx context.Context, theaterID string, req create
 	return screen, nil
 }
 
+func (s *Service) GetTheaters(ctx context.Context) ([]Theater, error) {
+	return s.repo.GetTheaters(ctx)
+}
+
 func GenerateSeats(rows, seatsPerRow int) ([]Seat, error) {
 	if rows < 1 || rows > MaxRows {
 		return nil, ValidationError{"rows must be between 1 and 26"}

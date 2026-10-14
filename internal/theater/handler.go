@@ -79,3 +79,14 @@ func (h *Handler) CreateScreen(w http.ResponseWriter, r *http.Request) {
 
 	httpx.WriteJSON(w, http.StatusCreated, screen)
 }
+
+func (h *Handler) GetTheaters(w http.ResponseWriter, r *http.Request) {
+	t, err := h.svc.GetTheaters(r.Context())
+
+	if err != nil {
+		log.Printf("getting theater: %v", err)
+		httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, t)
+}
