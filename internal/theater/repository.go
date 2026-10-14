@@ -91,7 +91,7 @@ func (r *Repository) CreateScreenWithSeats(ctx context.Context, s *Screen, seats
 func (r *Repository) GetTheaters(ctx context.Context) ([]Theater, error) {
 	theaters := []Theater{}
 
-	rows, err := r.db.Query(ctx, "SELECT id,name,city,is_active,created_at,updated_at FROM theaters where is_active ORDER BY created_at")
+	rows, err := r.db.Query(ctx, "SELECT id,name,city,is_active,created_at,updated_at FROM theaters WHERE is_active ORDER BY created_at")
 	if err != nil {
 		return nil, err
 	}
@@ -158,4 +158,30 @@ func (r *Repository) ListSeats(ctx context.Context, screenID string) ([]Seat, er
 		return nil, err
 	}
 	return seats, nil
+}
+
+func (r *Repository) ListScreens(ctx context.Context, theaterID string) ([]Screen, error) {
+	screens := []Screen{} // empty slice so JSON is [] not null
+
+	rows, err := r.db.Query(ctx, `
+		SELECT id, theater_id, name, row_count, seats_per_row, is_active, created_at, updated_at
+		FROM screens
+		WHERE theater_id = $1 AND is_active
+		ORDER BY name, id`, theaterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var sc Screen
+		if err := rows.Scan(&sc.ID, &sc.TheaterID, &sc.Name, &sc.RowCount, &sc.SeatsPerRow, &sc.IsActive, &sc.CreatedAt, &sc.UpdatedAt); err != nil {
+			return nil, err
+		}
+		screens = append(screens, sc)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return screens, nil
 }

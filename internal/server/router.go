@@ -30,13 +30,49 @@ type Deps struct {
 func NewRouter(d Deps) http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(middleware.RequestID, middleware.RealIP, middleware.Logger, middleware.Recoverer)
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(
+		middleware.RequestID,
+		middleware.RealIP,
+		middleware.Logger,
+		middleware.Recoverer,
+		middleware.Timeout(30*time.Second),
+	)
+	r.Get("/health", healthHandler(d))
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+	r.Route("/api/v1", func(r chi.Router) {
 
+		r.Post("/auth/register", d.User.Register)
+		r.Post("/auth/login", d.User.Login)
+
+		r.Get("/movies", d.Movie.ListMovies)
+		r.Get("/movies/{id}", d.Movie.GetMovie)
+
+		r.Get("/theaters", d.Theater.GetTheaters)
+		r.Get("/theaters/{id}/screens", d.Theater.ListScreens)
+		r.Get("/screens/{id}", d.Theater.GetScreen)
+
+		r.Group(func(r chi.Router) {
+			r.Use(d.JWT.Authenticate)
+
+			r.Get("/me", d.User.Me)
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.RequireRole("admin"))
+
+				r.Post("/movies", d.Movie.Create)
+				r.Post("/theaters", d.Theater.CreateTheater)
+				r.Post("/theaters/{id}/screens", d.Theater.CreateScreen)
+			})
+		})
+	})
+
+	return r
+
+}
+
+func healthHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-
 		defer cancel()
 
 		status := map[string]string{"postgres": "ok", "redis": "ok"}
@@ -45,32 +81,10 @@ func NewRouter(d Deps) http.Handler {
 		if err := d.DB.Ping(ctx); err != nil {
 			status["postgres"], code = "down", http.StatusServiceUnavailable
 		}
-
 		if err := d.RDB.Ping(ctx).Err(); err != nil {
 			status["redis"], code = "down", http.StatusServiceUnavailable
 		}
 
 		httpx.WriteJSON(w, code, status)
-
-	})
-
-	r.Post("/register", d.User.Register)
-	r.Post("/login", d.User.Login)
-	r.Get("/movies", d.Movie.ListMovies)
-	r.Get("/movie/{id}", d.Movie.GetMovie)
-	r.Get("/theater", d.Theater.GetTheaters)
-	r.Get("/screen/{id}", d.Theater.GetScreen)
-
-	r.Route("/api", func(r chi.Router) {
-		r.Use(d.JWT.Authenticate)
-		r.Get("/me", d.User.Me)
-
-		r.With(auth.RequireRole("admin")).Post("/movies", d.Movie.Create)
-		r.With(auth.RequireRole("admin")).Post("/theater", d.Theater.CreateTheater)
-		r.With(auth.RequireRole("admin")).Post("/screen/{id}", d.Theater.CreateScreen)
-
-	})
-
-	return r
-
+	}
 }

@@ -100,3 +100,17 @@ func (h *Handler) GetScreen(w http.ResponseWriter, r *http.Request) {
 	}
 	httpx.WriteJSON(w, http.StatusOK, layout)
 }
+
+func (h *Handler) ListScreens(w http.ResponseWriter, r *http.Request) {
+	screens, err := h.svc.ListScreens(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			httpx.WriteError(w, http.StatusNotFound, "not found")
+			return
+		}
+		log.Printf("listing screens: %v", err)
+		httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, screens)
+}
