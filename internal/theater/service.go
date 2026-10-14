@@ -137,7 +137,7 @@ func GenerateSeats(rows, seatsPerRow int) ([]Seat, error) {
 	for r := 0; r < rows; r++ {
 		label := string(rune('A' + r))
 
-		for n := 1; n < seatsPerRow; n++ {
+		for n := 1; n <= seatsPerRow; n++ {
 			seats = append(seats, Seat{RowLabel: label, SeatNumber: n})
 		}
 	}

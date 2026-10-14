@@ -91,7 +91,7 @@ func (r *Repository) CreateScreenWithSeats(ctx context.Context, s *Screen, seats
 func (r *Repository) GetTheaters(ctx context.Context) ([]Theater, error) {
 	theaters := []Theater{}
 
-	rows, err := r.db.Query(ctx, "SELECT id,name,city,is_active,created_at,updated_at FROM theaters WHERE is_active ORDER BY created_at")
+	rows, err := r.db.Query(ctx, "SELECT id,name,city,is_active,created_at,updated_at FROM theaters WHERE is_active ORDER BY created_at, id")
 	if err != nil {
 		return nil, err
 	}
