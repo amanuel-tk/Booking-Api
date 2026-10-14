@@ -8,6 +8,7 @@ import (
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
 	"github.com/amanuel-tk/Booking-Api/internal/movie"
+	"github.com/amanuel-tk/Booking-Api/internal/theater"
 	"github.com/amanuel-tk/Booking-Api/internal/user"
 
 	"github.com/go-chi/chi/v5"
@@ -18,11 +19,12 @@ import (
 )
 
 type Deps struct {
-	DB    *pgxpool.Pool
-	RDB   *redis.Client
-	JWT   *auth.JWTManager
-	User  *user.Handler
-	Movie *movie.Handler
+	DB      *pgxpool.Pool
+	RDB     *redis.Client
+	JWT     *auth.JWTManager
+	User    *user.Handler
+	Movie   *movie.Handler
+	Theater *theater.Handler
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -62,6 +64,7 @@ func NewRouter(d Deps) http.Handler {
 		r.Get("/me", d.User.Me)
 
 		r.With(auth.RequireRole("admin")).Post("/movies", d.Movie.Create)
+		r.With(auth.RequireRole("admin")).Post("/theater", d.Theater.CreateTheater)
 
 	})
 
