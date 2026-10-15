@@ -15,6 +15,8 @@ type Config struct {
 	RedisPassword  string
 	JWTSecret      string
 	AccessTokenTTL time.Duration
+	CinemaTZ       string
+	CinemaLoc      *time.Location
 }
 
 func LoadConfig() (*Config, error) {
@@ -34,7 +36,14 @@ func LoadConfig() (*Config, error) {
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AccessTokenTTL: ttl,
+		CinemaTZ:       getEnv("CINEMA_TZ", "Africa/Addis_Ababa"),
 	}
+
+	loc, err := time.LoadLocation(cfg.CinemaTZ)
+	if err != nil {
+		return nil, fmt.Errorf("load time zone: %v", err)
+	}
+	cfg.CinemaLoc = loc
 
 	if cfg.DatabaseURL == "" || cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("DATABASE_URL and JWT_SECRET are required")
