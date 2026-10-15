@@ -125,6 +125,10 @@ func (s *Service) ListScreens(ctx context.Context, theaterID string) ([]Screen, 
 	return screens, nil
 }
 
+func (s *Service) GetScreenInfo(ctx context.Context, id string) (*Screen, error) {
+	return s.repo.GetScreen(ctx, id)
+}
+
 func GenerateSeats(rows, seatsPerRow int) ([]Seat, error) {
 	if rows < 1 || rows > MaxRows {
 		return nil, ValidationError{"rows must be between 1 and 26"}

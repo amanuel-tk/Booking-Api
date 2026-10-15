@@ -8,6 +8,7 @@ import (
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
 	"github.com/amanuel-tk/Booking-Api/internal/movie"
+	"github.com/amanuel-tk/Booking-Api/internal/showtime"
 	"github.com/amanuel-tk/Booking-Api/internal/theater"
 	"github.com/amanuel-tk/Booking-Api/internal/user"
 
@@ -19,12 +20,13 @@ import (
 )
 
 type Deps struct {
-	DB      *pgxpool.Pool
-	RDB     *redis.Client
-	JWT     *auth.JWTManager
-	User    *user.Handler
-	Movie   *movie.Handler
-	Theater *theater.Handler
+	DB       *pgxpool.Pool
+	RDB      *redis.Client
+	JWT      *auth.JWTManager
+	User     *user.Handler
+	Movie    *movie.Handler
+	Theater  *theater.Handler
+	Showtime *showtime.Handler
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -62,6 +64,8 @@ func NewRouter(d Deps) http.Handler {
 				r.Post("/movies", d.Movie.Create)
 				r.Post("/theaters", d.Theater.CreateTheater)
 				r.Post("/theaters/{id}/screens", d.Theater.CreateScreen)
+				r.Post("/showtimes", d.Showtime.CreateShowtime)
+
 			})
 		})
 	})

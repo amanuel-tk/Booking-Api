@@ -9,12 +9,14 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
 	"github.com/amanuel-tk/Booking-Api/internal/config"
 	"github.com/amanuel-tk/Booking-Api/internal/database"
 	"github.com/amanuel-tk/Booking-Api/internal/movie"
 	"github.com/amanuel-tk/Booking-Api/internal/server"
+	"github.com/amanuel-tk/Booking-Api/internal/showtime"
 	"github.com/amanuel-tk/Booking-Api/internal/theater"
 	"github.com/amanuel-tk/Booking-Api/internal/user"
 )
@@ -59,15 +61,20 @@ func main() {
 	theaterService := theater.NewService(theaterRepo)
 	theaterHandler := theater.NewHandler(theaterService)
 
+	showtimeRepo := showtime.NewRepository(db)
+	showtimeService := showtime.NewService(showtimeRepo, movieService, theaterService, cfg.CinemaLoc)
+	showtimeHandler := showtime.NewHandler(showtimeService)
+
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
 		Handler: server.NewRouter(server.Deps{
-			DB:      db,
-			RDB:     rdb,
-			JWT:     jwtm,
-			User:    userHandler,
-			Movie:   movieHandler,
-			Theater: theaterHandler,
+			DB:       db,
+			RDB:      rdb,
+			JWT:      jwtm,
+			User:     userHandler,
+			Movie:    movieHandler,
+			Theater:  theaterHandler,
+			Showtime: showtimeHandler,
 		}),
 		ReadTimeout: 5 * time.Second,
 	}
