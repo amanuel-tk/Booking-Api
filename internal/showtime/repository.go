@@ -3,6 +3,7 @@ package showtime
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -71,4 +72,44 @@ func (r *Repository) GetShowtime(ctx context.Context, id string) (*Showtime, err
 		return nil, err
 	}
 	return &st, nil
+}
+
+func (r *Repository) ListByMovie(ctx context.Context, movieID string, from, to, after time.Time) ([]ListItem, error) {
+	const q = `
+		SELECT st.id, st.starts_at, st.ends_at, st.price_cents,
+		       sc.id, sc.name, t.id, t.name
+		FROM showtimes st
+		JOIN screens  sc ON sc.id = st.screen_id
+		JOIN theaters t  ON t.id  = sc.theater_id
+		WHERE st.movie_id = $1
+		  AND st.is_active = true
+		  AND st.starts_at >= $2
+		  AND st.starts_at <  $3
+		  AND st.starts_at >  $4
+		ORDER BY st.starts_at`
+
+	rows, err := r.db.Query(ctx, q, movieID, from, to, after)
+	if err != nil {
+		if pgCode(err) == pgInvalidText {
+			return []ListItem{}, nil
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []ListItem{}
+	for rows.Next() {
+		var it ListItem
+		if err := rows.Scan(
+			&it.ID, &it.StartsAt, &it.EndsAt, &it.PriceCents,
+			&it.ScreenID, &it.ScreenName, &it.TheaterID, &it.TheaterName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, it)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

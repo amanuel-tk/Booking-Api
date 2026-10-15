@@ -48,6 +48,7 @@ func NewRouter(d Deps) http.Handler {
 
 		r.Get("/movies", d.Movie.ListMovies)
 		r.Get("/movies/{id}", d.Movie.GetMovie)
+		r.Get("/movies/{id}/showtimes", d.Showtime.ListByMovie)
 
 		r.Get("/theaters", d.Theater.GetTheaters)
 		r.Get("/theaters/{id}/screens", d.Theater.ListScreens)

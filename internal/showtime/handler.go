@@ -40,6 +40,21 @@ func (h *Handler) GetShowtime(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, st)
 }
 
+func (h *Handler) ListByMovie(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	from := q.Get("from")
+	if from == "" {
+		from = q.Get("date")
+	}
+	items, err := h.svc.ListByMovie(r.Context(), chi.URLParam(r, "id"), from, q.Get("to"))
+
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, items)
+}
+
 func (h *Handler) writeServiceError(w http.ResponseWriter, err error) {
 	var ve ValidationError
 

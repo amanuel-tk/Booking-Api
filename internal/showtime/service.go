@@ -13,6 +13,7 @@ const (
 	CleaningBuffer = 15 * time.Minute
 	MaxPriceCents  = 100_000_00
 	dateLayout     = "2006-01-02"
+	maxRangeDays   = 31
 )
 
 type MovieGetter interface {
@@ -26,6 +27,7 @@ type ScreenGetter interface {
 type Repo interface {
 	CreateShowtime(ctx context.Context, st *Showtime) error
 	GetShowtime(ctx context.Context, id string) (*Showtime, error)
+	ListByMovie(ctx context.Context, movieID string, from, to, after time.Time) ([]ListItem, error)
 }
 
 type Service struct {
@@ -65,14 +67,13 @@ func (s *Service) CreateShowtime(ctx context.Context, req CreateShowtimeRequest)
 		return nil, ValidationError{"movie is not active"}
 	}
 
-	sc, err := s.screens.GetScreenInfo(ctx, req.ScreenID)
+	_, err = s.screens.GetScreenInfo(ctx, req.ScreenID)
 	if err != nil {
 		if errors.Is(err, theater.ErrNotFound) {
 			return nil, ErrScreenNotFound
 		}
 		return nil, err
 	}
-	_ = sc
 
 	startsAt := req.StartsAt.UTC()
 	st := &Showtime{
@@ -90,6 +91,42 @@ func (s *Service) CreateShowtime(ctx context.Context, req CreateShowtimeRequest)
 
 func (s *Service) GetShowtime(ctx context.Context, id string) (*Showtime, error) {
 	return s.repo.GetShowtime(ctx, id)
+}
+
+func (s *Service) ListByMovie(ctx context.Context, movieID, fromStr, toStr string) ([]ListItem, error) {
+	now := s.now()
+	if fromStr == "" {
+		fromStr = now.In(s.loc).Format(dateLayout)
+	}
+	if toStr == "" {
+		toStr = fromStr
+	}
+
+	from, _, err := dayRange(fromStr, s.loc)
+	if err != nil {
+		return nil, err
+	}
+	_, to, err := dayRange(toStr, s.loc)
+	if err != nil {
+		return nil, err
+	}
+
+	if !to.After(from) {
+		return nil, ValidationError{"to must not be before from"}
+	}
+	if to.Sub(from) > maxRangeDays*24*time.Hour {
+		return nil, ValidationError{"range must be at most 31 days"}
+	}
+
+	return s.repo.ListByMovie(ctx, movieID, from, to, now)
+}
+
+func dayRange(date string, loc *time.Location) (time.Time, time.Time, error) {
+	day, err := time.ParseInLocation(dateLayout, date, loc)
+	if err != nil {
+		return time.Time{}, time.Time{}, ValidationError{"date must be YYYY-MM-DD"}
+	}
+	return day, day.AddDate(0, 0, 1), nil
 }
 
 func ComputeEndsAt(start time.Time, durationMinutes int) time.Time {
