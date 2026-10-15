@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
+	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
@@ -28,6 +29,15 @@ func (h *Handler) CreateShowtime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, http.StatusCreated, st)
+}
+
+func (h *Handler) GetShowtime(w http.ResponseWriter, r *http.Request) {
+	st, err := h.svc.GetShowtime(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, st)
 }
 
 func (h *Handler) writeServiceError(w http.ResponseWriter, err error) {

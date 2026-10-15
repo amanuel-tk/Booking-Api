@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -49,4 +50,25 @@ func (r *Repository) CreateShowtime(ctx context.Context, st *Showtime) error {
 		return err
 	}
 	return nil
+}
+
+func (r *Repository) GetShowtime(ctx context.Context, id string) (*Showtime, error) {
+	const q = `
+		SELECT id, movie_id, screen_id, starts_at, ends_at, price_cents,
+		       is_active, created_at, updated_at
+		FROM showtimes
+		WHERE id = $1 AND is_active = true`
+
+	var st Showtime
+	err := r.db.QueryRow(ctx, q, id).Scan(
+		&st.ID, &st.MovieID, &st.ScreenID, &st.StartsAt, &st.EndsAt, &st.PriceCents,
+		&st.IsActive, &st.CreatedAt, &st.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) || pgCode(err) == pgInvalidText {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &st, nil
 }

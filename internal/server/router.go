@@ -52,6 +52,7 @@ func NewRouter(d Deps) http.Handler {
 		r.Get("/theaters", d.Theater.GetTheaters)
 		r.Get("/theaters/{id}/screens", d.Theater.ListScreens)
 		r.Get("/screens/{id}", d.Theater.GetScreen)
+		r.Get("/showtimes/{id}", d.Showtime.GetShowtime)
 
 		r.Group(func(r chi.Router) {
 			r.Use(d.JWT.Authenticate)

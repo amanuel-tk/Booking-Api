@@ -25,6 +25,7 @@ type ScreenGetter interface {
 
 type Repo interface {
 	CreateShowtime(ctx context.Context, st *Showtime) error
+	GetShowtime(ctx context.Context, id string) (*Showtime, error)
 }
 
 type Service struct {
@@ -85,6 +86,10 @@ func (s *Service) CreateShowtime(ctx context.Context, req CreateShowtimeRequest)
 		return nil, err
 	}
 	return st, nil
+}
+
+func (s *Service) GetShowtime(ctx context.Context, id string) (*Showtime, error) {
+	return s.repo.GetShowtime(ctx, id)
 }
 
 func ComputeEndsAt(start time.Time, durationMinutes int) time.Time {
