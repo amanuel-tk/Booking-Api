@@ -147,3 +147,15 @@ func GenerateSeats(rows, seatsPerRow int) ([]Seat, error) {
 	}
 	return seats, nil
 }
+
+func (s *Service) ListSeats(ctx context.Context, screenID string) ([]Seat, error) {
+	return s.repo.ListSeats(ctx, screenID)
+}
+
+func (s *Service) SeatsBelongToScreen(ctx context.Context, screenID string, seatIDs []string) (bool, error) {
+	n, err := s.repo.CountSeatsInScreen(ctx, screenID, seatIDs)
+	if err != nil {
+		return false, err
+	}
+	return n == len(seatIDs), nil
+}

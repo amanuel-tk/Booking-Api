@@ -185,3 +185,16 @@ func (r *Repository) ListScreens(ctx context.Context, theaterID string) ([]Scree
 	}
 	return screens, nil
 }
+
+func (r *Repository) CountSeatsInScreen(ctx context.Context, screenID string, seatIDs []string) (int, error) {
+	const q = `SELECT count(*) FROM seats WHERE screen_id = $1 AND id::text = ANY($2)`
+
+	var n int
+	if err := r.db.QueryRow(ctx, q, screenID, seatIDs).Scan(&n); err != nil {
+		if pgCode(err) == pgInvalidText {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("count seats: %w", err)
+	}
+	return n, nil
+}
