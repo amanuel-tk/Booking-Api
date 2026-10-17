@@ -8,11 +8,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// holdScript is all-or-nothing. Redis runs it as ONE unit, so nothing can
-// happen between the check loop and the write loop.
-//
-// KEYS = one key per seat, ARGV[1] = user id, ARGV[2] = ttl in milliseconds.
-// Returns the (1-based) positions of conflicting seats, or an empty list on success.
 var holdScript = redis.NewScript(`
 local conflicts = {}
 for i, key in ipairs(KEYS) do
@@ -30,8 +25,6 @@ end
 return {}
 `)
 
-// releaseScript deletes only the keys that still belong to this user,
-// so we never delete someone else's hold after ours expired.
 var releaseScript = redis.NewScript(`
 local n = 0
 for _, key in ipairs(KEYS) do
@@ -52,8 +45,6 @@ func NewStore(rdb *redis.Client, ttl time.Duration) *Store {
 	return &Store{rdb: rdb, ttl: ttl}
 }
 
-// The {showtimeID} part is a hash tag: all keys of one showtime land in the
-// same slot, so the multi-key scripts also work on Redis Cluster.
 func seatKey(showtimeID, seatID string) string {
 	return "hold:{" + showtimeID + "}:" + seatID
 }
@@ -66,8 +57,6 @@ func keysFor(showtimeID string, seatIDs []string) []string {
 	return keys
 }
 
-// Hold holds all seats for the user, or none. It returns the conflicting
-// seat ids (empty on success).
 func (s *Store) Hold(ctx context.Context, showtimeID string, seatIDs []string, userID string) ([]string, error) {
 	res, err := holdScript.Run(ctx, s.rdb, keysFor(showtimeID, seatIDs), userID, s.ttl.Milliseconds()).Slice()
 	if err != nil {
@@ -85,7 +74,6 @@ func (s *Store) Hold(ctx context.Context, showtimeID string, seatIDs []string, u
 	return conflicts, nil
 }
 
-// Owned reports whether EVERY seat is currently held by this user.
 func (s *Store) Owned(ctx context.Context, showtimeID string, seatIDs []string, userID string) (bool, error) {
 	if len(seatIDs) == 0 {
 		return false, nil
@@ -95,7 +83,7 @@ func (s *Store) Owned(ctx context.Context, showtimeID string, seatIDs []string, 
 		return false, fmt.Errorf("check holds: %w", err)
 	}
 	for _, v := range vals {
-		owner, ok := v.(string) // a missing key is nil, so ok is false
+		owner, ok := v.(string)
 		if !ok || owner != userID {
 			return false, nil
 		}
@@ -103,7 +91,6 @@ func (s *Store) Owned(ctx context.Context, showtimeID string, seatIDs []string, 
 	return true, nil
 }
 
-// Held returns which of the given seats are held by anyone (one MGET).
 func (s *Store) Held(ctx context.Context, showtimeID string, seatIDs []string) (map[string]bool, error) {
 	held := make(map[string]bool)
 	if len(seatIDs) == 0 {
@@ -121,7 +108,6 @@ func (s *Store) Held(ctx context.Context, showtimeID string, seatIDs []string) (
 	return held, nil
 }
 
-// Release removes this user's holds on the given seats.
 func (s *Store) Release(ctx context.Context, showtimeID string, seatIDs []string, userID string) error {
 	if len(seatIDs) == 0 {
 		return nil
