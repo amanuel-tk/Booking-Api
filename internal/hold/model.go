@@ -21,7 +21,6 @@ type ValidationError struct{ Msg string }
 
 func (e ValidationError) Error() string { return e.Msg }
 
-// SeatsUnavailableError carries WHICH seats were taken, so the API can show them.
 type SeatsUnavailableError struct{ SeatIDs []string }
 
 func (e SeatsUnavailableError) Error() string { return "some seats are not available" }
