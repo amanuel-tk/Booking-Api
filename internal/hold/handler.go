@@ -19,8 +19,6 @@ func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// ADJUST THIS to match how your auth package exposes the user id.
-// The id must come from the JWT, never from the request body.
 func currentUserID(r *http.Request) (string, bool) {
 	claims, ok := auth.ClaimsFromContext(r.Context())
 	if !ok {
@@ -29,7 +27,6 @@ func currentUserID(r *http.Request) (string, bool) {
 	return claims.Subject, true
 }
 
-// POST /showtimes/{id}/holds (logged in)
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := currentUserID(r)
 	if !ok {
