@@ -12,7 +12,6 @@ import (
 
 const MaxSeatsPerHold = 6
 
-// Small interfaces, defined where they are used.
 type ShowtimeGetter interface {
 	GetShowtime(ctx context.Context, id string) (*showtime.Showtime, error)
 }
@@ -20,9 +19,6 @@ type ShowtimeGetter interface {
 type SeatChecker interface {
 	SeatsBelongToScreen(ctx context.Context, screenID string, seatIDs []string) (bool, error)
 }
-
-// BookedChecker returns which of the given seats are already booked.
-// booking.Repository satisfies it, and we never import the booking package.
 type BookedChecker interface {
 	BookedAmong(ctx context.Context, showtimeID string, seatIDs []string) ([]string, error)
 }
@@ -92,7 +88,6 @@ func (s *Service) HoldSeats(ctx context.Context, showtimeID, userID string, seat
 	}, nil
 }
 
-// cleanSeatIDs: 1..6 ids, lowercase, trimmed, no duplicates.
 func cleanSeatIDs(in []string) ([]string, error) {
 	if len(in) == 0 {
 		return nil, ValidationError{"seat_ids is required"}
