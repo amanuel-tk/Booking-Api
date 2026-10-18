@@ -12,8 +12,10 @@ import (
 	_ "time/tzdata"
 
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
+	"github.com/amanuel-tk/Booking-Api/internal/booking"
 	"github.com/amanuel-tk/Booking-Api/internal/config"
 	"github.com/amanuel-tk/Booking-Api/internal/database"
+	"github.com/amanuel-tk/Booking-Api/internal/hold"
 	"github.com/amanuel-tk/Booking-Api/internal/movie"
 	"github.com/amanuel-tk/Booking-Api/internal/server"
 	"github.com/amanuel-tk/Booking-Api/internal/showtime"
@@ -65,6 +67,16 @@ func main() {
 	showtimeService := showtime.NewService(showtimeRepo, movieService, theaterService, cfg.CinemaLoc)
 	showtimeHandler := showtime.NewHandler(showtimeService)
 
+	holdStore := hold.NewStore(rdb, cfg.HoldTTL)
+	bookingRepo := booking.NewRepository(db)
+
+	holdSvc := hold.NewService(holdStore, showtimeService, theaterService, bookingRepo, cfg.HoldTTL)
+	holdHandler := hold.NewHandler(holdSvc)
+
+	bookingSvc := booking.NewService(bookingRepo, showtimeService, theaterService, holdStore)
+	availSvc := booking.NewAvailabilityService(showtimeService, theaterService, bookingRepo, holdStore)
+	bookingHandler := booking.NewHandler(bookingSvc, availSvc)
+
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
 		Handler: server.NewRouter(server.Deps{
@@ -75,6 +87,8 @@ func main() {
 			Movie:    movieHandler,
 			Theater:  theaterHandler,
 			Showtime: showtimeHandler,
+			Hold:     holdHandler,
+			Booking:  bookingHandler,
 		}),
 		ReadTimeout: 5 * time.Second,
 	}
