@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/amanuel-tk/Booking-Api/internal/auth"
+	"github.com/amanuel-tk/Booking-Api/internal/booking"
+	"github.com/amanuel-tk/Booking-Api/internal/hold"
 	"github.com/amanuel-tk/Booking-Api/internal/httpx"
 	"github.com/amanuel-tk/Booking-Api/internal/movie"
 	"github.com/amanuel-tk/Booking-Api/internal/showtime"
@@ -27,6 +29,8 @@ type Deps struct {
 	Movie    *movie.Handler
 	Theater  *theater.Handler
 	Showtime *showtime.Handler
+	Hold     *hold.Handler
+	Booking  *booking.Handler
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -55,10 +59,18 @@ func NewRouter(d Deps) http.Handler {
 		r.Get("/screens/{id}", d.Theater.GetScreen)
 		r.Get("/showtimes/{id}", d.Showtime.GetShowtime)
 
+		r.Get("/showtimes/{id}/seats", d.Booking.SeatMap)
+
 		r.Group(func(r chi.Router) {
 			r.Use(d.JWT.Authenticate)
 
 			r.Get("/me", d.User.Me)
+
+			r.Post("/showtimes/{id}/holds", d.Hold.Create)
+			r.Post("/showtimes/{id}/bookings", d.Booking.Create)
+			r.Get("/me/bookings", d.Booking.List)
+			r.Get("/me/bookings/{id}", d.Booking.Get)
+			r.Post("/me/bookings/{id}/cancel", d.Booking.Cancel)
 
 			r.Group(func(r chi.Router) {
 				r.Use(auth.RequireRole("admin"))
