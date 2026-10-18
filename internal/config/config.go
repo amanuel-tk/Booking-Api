@@ -17,6 +17,7 @@ type Config struct {
 	AccessTokenTTL time.Duration
 	CinemaTZ       string
 	CinemaLoc      *time.Location
+	HoldTTL        time.Duration
 }
 
 func LoadConfig() (*Config, error) {
@@ -24,6 +25,13 @@ func LoadConfig() (*Config, error) {
 	_ = godotenv.Load()
 
 	ttl, err := time.ParseDuration(getEnv("ACCESS_TOKEN_TTL", "15m"))
+	holdTTL, err := time.ParseDuration(getEnv("HOLD_TTL", "10m"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid HOLD_TTL: %w", err)
+	}
+	if holdTTL <= 0 {
+		return nil, fmt.Errorf("HOLD_TTL must be positive")
+	}
 
 	if err != nil {
 		return nil, err
@@ -36,6 +44,7 @@ func LoadConfig() (*Config, error) {
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AccessTokenTTL: ttl,
+		HoldTTL:        holdTTL,
 		CinemaTZ:       getEnv("CINEMA_TZ", "Africa/Addis_Ababa"),
 	}
 
