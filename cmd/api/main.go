@@ -21,7 +21,19 @@ import (
 	"github.com/amanuel-tk/Booking-Api/internal/showtime"
 	"github.com/amanuel-tk/Booking-Api/internal/theater"
 	"github.com/amanuel-tk/Booking-Api/internal/user"
+
+	_ "github.com/amanuel-tk/Booking-Api/docs"
 )
+
+// @title           Booking API
+// @version         1.0
+// @description     Movie booking API: browse movies and showtimes, hold seats, book tickets.
+// @BasePath        /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer " followed by your JWT.
 
 func main() {
 
@@ -80,15 +92,16 @@ func main() {
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
 		Handler: server.NewRouter(server.Deps{
-			DB:       db,
-			RDB:      rdb,
-			JWT:      jwtm,
-			User:     userHandler,
-			Movie:    movieHandler,
-			Theater:  theaterHandler,
-			Showtime: showtimeHandler,
-			Hold:     holdHandler,
-			Booking:  bookingHandler,
+			DB:             db,
+			RDB:            rdb,
+			JWT:            jwtm,
+			User:           userHandler,
+			Movie:          movieHandler,
+			Theater:        theaterHandler,
+			Showtime:       showtimeHandler,
+			Hold:           holdHandler,
+			Booking:        bookingHandler,
+			SwaggerEnabled: true,
 		}),
 		ReadTimeout: 5 * time.Second,
 	}

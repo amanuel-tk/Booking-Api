@@ -18,6 +18,17 @@ func NewHandler(svc *Service) *Handler {
 	}
 }
 
+// Register godoc
+// @Summary      Register a new user
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      RegisterRequest  true  "New account"
+// @Success      201   {object}  User
+// @Failure      400   {object}  httpx.ErrorResponse  "Validation error"
+// @Failure      409   {object}  httpx.ErrorResponse  "Email already registered"
+// @Failure      500   {object}  httpx.ErrorResponse
+// @Router       /auth/register [post]
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 
@@ -43,6 +54,18 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusCreated, u)
 }
 
+// Login godoc
+// @Summary      Log in
+// @Description  Validates credentials and returns a 15-minute JWT access token.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      LoginRequest  true  "Credentials"
+// @Success      200   {object}  LoginResponse
+// @Failure      400   {object}  httpx.ErrorResponse  "Invalid request body"
+// @Failure      401   {object}  httpx.ErrorResponse  "Invalid email or password"
+// @Failure      500   {object}  httpx.ErrorResponse
+// @Router       /auth/login [post]
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if !httpx.DecodeJson(w, r, &req) {
@@ -61,10 +84,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{
-		"access_token": token,
-		"token_type":   "Bearer",
-		"user":         u,
+	httpx.WriteJSON(w, http.StatusOK, LoginResponse{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		User:        *u,
 	})
 }
 

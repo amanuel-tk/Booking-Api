@@ -19,18 +19,21 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type Deps struct {
-	DB       *pgxpool.Pool
-	RDB      *redis.Client
-	JWT      *auth.JWTManager
-	User     *user.Handler
-	Movie    *movie.Handler
-	Theater  *theater.Handler
-	Showtime *showtime.Handler
-	Hold     *hold.Handler
-	Booking  *booking.Handler
+	DB             *pgxpool.Pool
+	RDB            *redis.Client
+	JWT            *auth.JWTManager
+	User           *user.Handler
+	Movie          *movie.Handler
+	Theater        *theater.Handler
+	Showtime       *showtime.Handler
+	Hold           *hold.Handler
+	Booking        *booking.Handler
+	SwaggerEnabled bool
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -44,6 +47,9 @@ func NewRouter(d Deps) http.Handler {
 		middleware.Timeout(30*time.Second),
 	)
 	r.Get("/health", healthHandler(d))
+	if d.SwaggerEnabled {
+		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
+	}
 
 	r.Route("/api/v1", func(r chi.Router) {
 

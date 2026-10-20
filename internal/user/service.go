@@ -12,14 +12,15 @@ import (
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
 type RegisterRequest struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
+	FirstName string `json:"first_name" example:"Jane" minLength:"1"`
+	LastName  string `json:"last_name" example:"Doe" minLength:"1"`
+	Email     string `json:"email" example:"jane@example.com" format:"email"`
+	Password  string `json:"password" example:"s3cretPass!" minLength:"8" maxLength:"72"`
 }
+
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" example:"jane@example.com" format:"email"`
+	Password string `json:"password" example:"s3cretPass!"`
 }
 
 type ValidationError struct {
