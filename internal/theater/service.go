@@ -16,13 +16,14 @@ func NewService(repo *Repository) *Service {
 }
 
 type CreateTheater struct {
-	Name string `json:"name"`
-	City string `json:"city"`
+	Name string `json:"name" example:"cinema ethiopia" maxLength:"100"`
+	City string `json:"city" example:"addis ababa" maxLength:"100"`
 }
-type createScreenRequest struct {
-	Name        string `json:"name"`
-	Rows        int    `json:"rows"`
-	SeatsPerRow int    `json:"seats_per_row"`
+
+type CreateScreenRequest struct {
+	Name        string `json:"name" example:"screen 1" maxLength:"100"`
+	Rows        int    `json:"rows" example:"10" minimum:"1" maximum:"26"`
+	SeatsPerRow int    `json:"seats_per_row" example:"15" minimum:"1" maximum:"50"`
 }
 
 const (
@@ -53,7 +54,7 @@ func (s *Service) CreateTheater(ctx context.Context, req CreateTheater) (*Theate
 
 }
 
-func (s *Service) CreateScreen(ctx context.Context, theaterID string, req createScreenRequest) (*Screen, error) {
+func (s *Service) CreateScreen(ctx context.Context, theaterID string, req CreateScreenRequest) (*Screen, error) {
 
 	name := strings.TrimSpace(strings.ToLower(req.Name))
 

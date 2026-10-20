@@ -1,0 +1,432 @@
+basePath: /api/v1
+definitions:
+  github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  internal_theater.CreateScreenRequest:
+    properties:
+      name:
+        example: screen 1
+        maxLength: 100
+        type: string
+      rows:
+        example: 10
+        maximum: 26
+        minimum: 1
+        type: integer
+      seats_per_row:
+        example: 15
+        maximum: 50
+        minimum: 1
+        type: integer
+    type: object
+  internal_theater.CreateTheater:
+    properties:
+      city:
+        example: addis ababa
+        maxLength: 100
+        type: string
+      name:
+        example: cinema ethiopia
+        maxLength: 100
+        type: string
+    type: object
+  internal_theater.Screen:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      row_count:
+        type: integer
+      seats_per_row:
+        type: integer
+      theater_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_theater.ScreenLayout:
+    properties:
+      rows:
+        items:
+          $ref: '#/definitions/internal_theater.SeatRow'
+        type: array
+      screen:
+        $ref: '#/definitions/internal_theater.Screen'
+    type: object
+  internal_theater.Seat:
+    properties:
+      id:
+        format: uuid
+        type: string
+      row_label:
+        example: A
+        type: string
+      seat_number:
+        example: 1
+        type: integer
+    type: object
+  internal_theater.SeatRow:
+    properties:
+      row:
+        example: A
+        type: string
+      seats:
+        items:
+          $ref: '#/definitions/internal_theater.Seat'
+        type: array
+    type: object
+  internal_theater.Theater:
+    properties:
+      city:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_user.LoginRequest:
+    properties:
+      email:
+        example: jane@example.com
+        format: email
+        type: string
+      password:
+        example: s3cretPass!
+        type: string
+    type: object
+  internal_user.LoginResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/internal_user.User'
+    type: object
+  internal_user.RegisterRequest:
+    properties:
+      email:
+        example: jane@example.com
+        format: email
+        type: string
+      first_name:
+        example: Jane
+        minLength: 1
+        type: string
+      last_name:
+        example: Doe
+        minLength: 1
+        type: string
+      password:
+        example: s3cretPass!
+        maxLength: 72
+        minLength: 8
+        type: string
+    type: object
+  internal_user.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        example: jane@example.com
+        type: string
+      first_name:
+        example: jane
+        type: string
+      id:
+        example: 3f2b8c1e-5a7d-4e6f-9b1a-2c3d4e5f6a7b
+        format: uuid
+        type: string
+      is_active:
+        type: boolean
+      last_name:
+        example: doe
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      roles:
+        example:
+        - user
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: 'Movie booking API: browse movies and showtimes, hold seats, book tickets.'
+  title: Booking API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Validates credentials and returns a 15-minute JWT access token.
+      parameters:
+      - description: Credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_user.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_user.LoginResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "401":
+          description: Invalid email or password
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: Log in
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: New account
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_user.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_user.User'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "409":
+          description: Email already registered
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Auth
+  /screens/{id}:
+    get:
+      description: Retrieve a screen and its seats grouped by row. Each row contains
+        its label and corresponding seats.
+      parameters:
+      - description: Screen UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_theater.ScreenLayout'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: Get screen layout
+      tags:
+      - Screens
+  /theaters:
+    get:
+      description: Retrieve all active theaters ordered by creation date. Returns
+        an empty array if no theaters exist.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_theater.Theater'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: List theaters
+      tags:
+      - Theaters
+    post:
+      consumes:
+      - application/json
+      description: Create a new theater. The theater name and city must be provided
+        and cannot exceed 100 characters. Requires admin access.
+      parameters:
+      - description: Theater details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_theater.CreateTheater'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_theater.Theater'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a theater
+      tags:
+      - Theaters
+  /theaters/{id}/screens:
+    get:
+      description: Retrieve all active screens belonging to a theater. Returns an
+        empty array if no active screens exist.
+      parameters:
+      - description: Theater UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_theater.Screen'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: List theater screens
+      tags:
+      - Screens
+    post:
+      consumes:
+      - application/json
+      description: Create a screen in a theater and automatically generate its seats.
+        Rows must be between 1 and 26, and seats per row must be between 1 and 50.
+        Requires admin access.
+      parameters:
+      - description: Theater UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Screen details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_theater.CreateScreenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_theater.Screen'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a screen
+      tags:
+      - Screens
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer " followed by your JWT.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

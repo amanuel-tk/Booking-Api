@@ -26,14 +26,14 @@ type Screen struct {
 }
 
 type Seat struct {
-	ID         string `json:"id,omitempty"`
+	ID         string `json:"id,omitempty" format:"uuid"`
 	ScreenID   string `json:"-"`
-	RowLabel   string `json:"row_label"`
-	SeatNumber int    `json:"seat_number"`
+	RowLabel   string `json:"row_label" example:"A"`
+	SeatNumber int    `json:"seat_number" example:"1"`
 }
 
 type SeatRow struct {
-	Row   string `json:"row"`
+	Row   string `json:"row" example:"A"`
 	Seats []Seat `json:"seats"`
 }
 
