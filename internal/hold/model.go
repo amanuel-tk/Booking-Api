@@ -6,13 +6,18 @@ import (
 )
 
 type Request struct {
-	SeatIDs []string `json:"seat_ids"`
+	SeatIDs []string `json:"seat_ids" minItems:"1" maxItems:"6"`
 }
 
 type Result struct {
-	ShowtimeID string    `json:"showtime_id"`
+	ShowtimeID string    `json:"showtime_id" format:"uuid"`
 	SeatIDs    []string  `json:"seat_ids"`
 	ExpiresAt  time.Time `json:"expires_at"`
+}
+
+type SeatsUnavailableResponse struct {
+	Error   string   `json:"error" example:"some seats are not available"`
+	SeatIDs []string `json:"seat_ids"`
 }
 
 var ErrNotFound = errors.New("showtime not found")

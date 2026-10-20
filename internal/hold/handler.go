@@ -27,6 +27,22 @@ func currentUserID(r *http.Request) (string, bool) {
 	return claims.Subject, true
 }
 
+// Create godoc
+// @Summary      Hold seats for a showtime
+// @Description  Temporarily reserve 1 to 6 seats for the authenticated user. The showtime must exist and must not have started. All seats must belong to the showtime's screen and must not already be booked or held by another user. Holds expire automatically after the configured Redis TTL.
+// @Tags         Seat Holds
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path string true "Showtime UUID" format(uuid)
+// @Param        request body Request true "Seat IDs to hold"
+// @Success      201 {object} Result
+// @Failure      400 {object} httpx.ErrorResponse
+// @Failure      401 {object} httpx.ErrorResponse
+// @Failure      404 {object} httpx.ErrorResponse
+// @Failure      409 {object} SeatsUnavailableResponse
+// @Failure      500 {object} httpx.ErrorResponse
+// @Router       /showtimes/{id}/holds [post]
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := currentUserID(r)
 	if !ok {
