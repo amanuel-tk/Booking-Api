@@ -5,6 +5,63 @@ definitions:
       error:
         type: string
     type: object
+  internal_showtime.CreateShowtimeRequest:
+    properties:
+      movie_id:
+        format: uuid
+        type: string
+      price_cents:
+        example: 15000
+        maximum: 10000000
+        minimum: 0
+        type: integer
+      screen_id:
+        format: uuid
+        type: string
+      starts_at:
+        example: "2026-12-20T18:00:00+03:00"
+        type: string
+    type: object
+  internal_showtime.ListItem:
+    properties:
+      ends_at:
+        type: string
+      id:
+        type: string
+      price_cents:
+        type: integer
+      screen_id:
+        type: string
+      screen_name:
+        type: string
+      starts_at:
+        type: string
+      theater_id:
+        type: string
+      theater_name:
+        type: string
+    type: object
+  internal_showtime.Showtime:
+    properties:
+      created_at:
+        type: string
+      ends_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      movie_id:
+        type: string
+      price_cents:
+        type: integer
+      screen_id:
+        type: string
+      starts_at:
+        type: string
+      updated_at:
+        type: string
+    type: object
   internal_theater.CreateScreenRequest:
     properties:
       name:
@@ -244,6 +301,53 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /movies/{id}/showtimes:
+    get:
+      description: Retrieve upcoming showtimes for a movie within a date range. Dates
+        use YYYY-MM-DD. The "date" parameter is an alternative to "from". If no dates
+        are provided, today's date is used. The range is limited to 31 days.
+      parameters:
+      - description: Movie UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        example: "2026-12-20"
+        in: query
+        name: from
+        type: string
+      - description: End date, inclusive (YYYY-MM-DD)
+        example: "2026-12-25"
+        in: query
+        name: to
+        type: string
+      - description: Alternative start date if from is omitted (YYYY-MM-DD)
+        example: "2026-12-20"
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_showtime.ListItem'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: List movie showtimes
+      tags:
+      - Showtimes
   /screens/{id}:
     get:
       description: Retrieve a screen and its seats grouped by row. Each row contains
@@ -273,6 +377,86 @@ paths:
       summary: Get screen layout
       tags:
       - Screens
+  /showtimes:
+    post:
+      consumes:
+      - application/json
+      description: Schedule a movie on a screen. The start time must be in the future.
+        The end time is calculated from the movie duration plus a 15-minute cleaning
+        buffer. Overlapping showtimes on the same screen are rejected. Requires admin
+        access.
+      parameters:
+      - description: Showtime details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_showtime.CreateShowtimeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_showtime.Showtime'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a showtime
+      tags:
+      - Showtimes
+  /showtimes/{id}:
+    get:
+      description: Retrieve an active showtime by its UUID, including its movie, screen,
+        start time, end time, and ticket price.
+      parameters:
+      - description: Showtime UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_showtime.Showtime'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: Get a showtime
+      tags:
+      - Showtimes
   /theaters:
     get:
       description: Retrieve all active theaters ordered by creation date. Returns

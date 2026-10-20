@@ -111,6 +111,72 @@
                 }
             }
         },
+        "/movies/{id}/showtimes": {
+            "get": {
+                "description": "Retrieve upcoming showtimes for a movie within a date range. Dates use YYYY-MM-DD. The \"date\" parameter is an alternative to \"from\". If no dates are provided, today's date is used. The range is limited to 31 days.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Showtimes"
+                ],
+                "summary": "List movie showtimes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Movie UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-12-20",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-12-25",
+                        "description": "End date, inclusive (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-12-20",
+                        "description": "Alternative start date if from is omitted (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_showtime.ListItem"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/screens/{id}": {
             "get": {
                 "description": "Retrieve a screen and its seats grouped by row. Each row contains its label and corresponding seats.",
@@ -136,6 +202,123 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_theater.ScreenLayout"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/showtimes": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Schedule a movie on a screen. The start time must be in the future. The end time is calculated from the movie duration plus a 15-minute cleaning buffer. Overlapping showtimes on the same screen are rejected. Requires admin access.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Showtimes"
+                ],
+                "summary": "Create a showtime",
+                "parameters": [
+                    {
+                        "description": "Showtime details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_showtime.CreateShowtimeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_showtime.Showtime"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/showtimes/{id}": {
+            "get": {
+                "description": "Retrieve an active showtime by its UUID, including its movie, screen, start time, end time, and ticket price.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Showtimes"
+                ],
+                "summary": "Get a showtime",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Showtime UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_showtime.Showtime"
                         }
                     },
                     "404": {
@@ -381,6 +564,90 @@
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_showtime.CreateShowtimeRequest": {
+            "type": "object",
+            "properties": {
+                "movie_id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "price_cents": {
+                    "type": "integer",
+                    "maximum": 10000000,
+                    "minimum": 0,
+                    "example": 15000
+                },
+                "screen_id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "starts_at": {
+                    "type": "string",
+                    "example": "2026-12-20T18:00:00+03:00"
+                }
+            }
+        },
+        "internal_showtime.ListItem": {
+            "type": "object",
+            "properties": {
+                "ends_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "type": "integer"
+                },
+                "screen_id": {
+                    "type": "string"
+                },
+                "screen_name": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "theater_id": {
+                    "type": "string"
+                },
+                "theater_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_showtime.Showtime": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "movie_id": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "type": "integer"
+                },
+                "screen_id": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

@@ -29,10 +29,10 @@ type ListItem struct {
 }
 
 type CreateShowtimeRequest struct {
-	MovieID    string    `json:"movie_id"`
-	ScreenID   string    `json:"screen_id"`
-	StartsAt   time.Time `json:"starts_at"`
-	PriceCents int       `json:"price_cents"`
+	MovieID    string    `json:"movie_id" format:"uuid"`
+	ScreenID   string    `json:"screen_id" format:"uuid"`
+	StartsAt   time.Time `json:"starts_at" example:"2026-12-20T18:00:00+03:00"`
+	PriceCents int       `json:"price_cents" example:"15000" minimum:"0" maximum:"10000000"`
 }
 
 var (
