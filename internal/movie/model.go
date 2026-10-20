@@ -15,3 +15,10 @@ type Movie struct {
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
+
+type ListMoviesResponse struct {
+	Movies []Movie `json:"movies"`
+	Page   int     `json:"page" example:"1"`
+	Limit  int     `json:"limit" example:"20"`
+	Total  int     `json:"total" example:"100"`
+}

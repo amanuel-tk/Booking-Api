@@ -5,6 +5,78 @@ definitions:
       error:
         type: string
     type: object
+  internal_movie.CreateRequest:
+    properties:
+      description:
+        example: A science fiction thriller
+        type: string
+      duration_minutes:
+        example: 148
+        maximum: 600
+        minimum: 1
+        type: integer
+      genres:
+        items:
+          type: string
+        type: array
+      language:
+        example: English
+        type: string
+      poster_url:
+        example: https://example.com/poster.jpg
+        type: string
+      release_date:
+        example: "2010-07-16"
+        format: date
+        type: string
+      title:
+        example: Inception
+        maxLength: 200
+        type: string
+    type: object
+  internal_movie.ListMoviesResponse:
+    properties:
+      limit:
+        example: 20
+        type: integer
+      movies:
+        items:
+          $ref: '#/definitions/internal_movie.Movie'
+        type: array
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  internal_movie.Movie:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      duration_minutes:
+        type: integer
+      genres:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      is_active:
+        type: boolean
+      language:
+        type: string
+      poster_url:
+        type: string
+      release_date:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
   internal_showtime.CreateShowtimeRequest:
     properties:
       movie_id:
@@ -301,6 +373,113 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /movies:
+    get:
+      description: Retrieve active movies with optional title search and pagination.
+        Results are ordered by release date descending. Default page is 1, default
+        limit is 20, and maximum limit is 100.
+      parameters:
+      - description: Search movies by title
+        in: query
+        name: q
+        type: string
+      - default: 1
+        description: Page number (default 1)
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Movies per page (default 20, max 100)
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_movie.ListMoviesResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: List movies
+      tags:
+      - Movies
+    post:
+      consumes:
+      - application/json
+      description: Create a new movie. Title is required (max 200 characters), duration
+        must be between 1 and 600 minutes, and release_date must use YYYY-MM-DD format.
+        Requires admin access.
+      parameters:
+      - description: Movie details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_movie.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_movie.Movie'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a movie
+      tags:
+      - Movies
+  /movies/{id}:
+    get:
+      description: Retrieve an active movie by its UUID. Returns 404 if the movie
+        does not exist or is inactive.
+      parameters:
+      - description: Movie UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_movie.Movie'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: Get a movie
+      tags:
+      - Movies
   /movies/{id}/showtimes:
     get:
       description: Retrieve upcoming showtimes for a movie within a date range. Dates

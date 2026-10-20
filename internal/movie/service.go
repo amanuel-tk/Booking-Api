@@ -12,13 +12,13 @@ type Service struct {
 	repo *Repository
 }
 type CreateRequest struct {
-	Title           string   `json:"title"`
-	Description     string   `json:"description"`
-	DurationMinutes int      `json:"duration_minutes"`
-	Language        string   `json:"language"`
+	Title           string   `json:"title" example:"Inception" maxLength:"200"`
+	Description     string   `json:"description" example:"A science fiction thriller"`
+	DurationMinutes int      `json:"duration_minutes" example:"148" minimum:"1" maximum:"600"`
+	Language        string   `json:"language" example:"English"`
 	Genres          []string `json:"genres"`
-	ReleaseDate     string   `json:"release_date"` // "2006-01-02"
-	PosterURL       string   `json:"poster_url"`
+	ReleaseDate     string   `json:"release_date" example:"2010-07-16" format:"date"`
+	PosterURL       string   `json:"poster_url" example:"https://example.com/poster.jpg"`
 }
 
 type ValidationError struct {
