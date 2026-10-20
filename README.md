@@ -4,7 +4,7 @@ A movie ticket booking REST API written in Go. Admins manage movies, theaters, s
 
 The main engineering goal is **correctness under concurrency**: two people clicking the same seat at the same moment must never both get it.
 
-**[Interactive API docs](https://<user>.github.io/<repo>/)** | [OpenAPI spec](docs/swagger.json)
+**[Interactive API docs](http://109.106.244.215:8085/swagger/index.html)** | [OpenAPI spec](docs/swagger.json)
 
 ## What it does
 

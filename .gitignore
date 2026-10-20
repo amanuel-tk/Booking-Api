@@ -1,2 +1,4 @@
 .env
 /tmp
+.env.*
+!.env.example
