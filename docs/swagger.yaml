@@ -5,6 +5,117 @@ definitions:
       error:
         type: string
     type: object
+  internal_booking.BookingView:
+    properties:
+      cancelled_at:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      movie_title:
+        type: string
+      screen_name:
+        type: string
+      seats:
+        items:
+          type: string
+        type: array
+      showtime_id:
+        type: string
+      starts_at:
+        type: string
+      status:
+        type: string
+      theater_name:
+        type: string
+      total_cents:
+        type: integer
+    type: object
+  internal_booking.CreateRequest:
+    properties:
+      seat_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_booking.SeatMap:
+    properties:
+      available:
+        type: integer
+      rows:
+        items:
+          $ref: '#/definitions/internal_booking.SeatMapRow'
+        type: array
+      screen_id:
+        type: string
+      showtime_id:
+        type: string
+    type: object
+  internal_booking.SeatMapRow:
+    properties:
+      row:
+        type: string
+      seats:
+        items:
+          $ref: '#/definitions/internal_booking.SeatView'
+        type: array
+    type: object
+  internal_booking.SeatStatus:
+    enum:
+    - free
+    - held
+    - booked
+    type: string
+    x-enum-varnames:
+    - SeatFree
+    - SeatHeld
+    - SeatBooked
+  internal_booking.SeatView:
+    properties:
+      id:
+        format: uuid
+        type: string
+      number:
+        example: 1
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/internal_booking.SeatStatus'
+        enum:
+        - free
+        - held
+        - booked
+    type: object
+  internal_hold.Request:
+    properties:
+      seat_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_hold.Result:
+    properties:
+      expires_at:
+        type: string
+      seat_ids:
+        items:
+          type: string
+        type: array
+      showtime_id:
+        format: uuid
+        type: string
+    type: object
+  internal_hold.SeatsUnavailableResponse:
+    properties:
+      error:
+        example: some seats are not available
+        type: string
+      seat_ids:
+        items:
+          type: string
+        type: array
+    type: object
   internal_movie.CreateRequest:
     properties:
       description:
@@ -373,6 +484,109 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /me/bookings:
+    get:
+      description: Retrieve up to 100 bookings belonging to the authenticated user,
+        ordered by creation date descending. Includes both confirmed and cancelled
+        bookings.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_booking.BookingView'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List my bookings
+      tags:
+      - Bookings
+  /me/bookings/{id}:
+    get:
+      description: Retrieve a booking by UUID. Only bookings belonging to the authenticated
+        user can be accessed.
+      parameters:
+      - description: Booking UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_booking.BookingView'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my booking
+      tags:
+      - Bookings
+  /me/bookings/{id}/cancel:
+    post:
+      description: Cancel a confirmed booking belonging to the authenticated user.
+        Cancellation is allowed only when the showtime starts at least 2 hours from
+        the current time. Successfully cancelled bookings release their seats for
+        future bookings.
+      parameters:
+      - description: Booking UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_booking.BookingView'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel my booking
+      tags:
+      - Bookings
   /movies:
     get:
       description: Retrieve active movies with optional title search and pagination.
@@ -636,6 +850,142 @@ paths:
       summary: Get a showtime
       tags:
       - Showtimes
+  /showtimes/{id}/bookings:
+    post:
+      consumes:
+      - application/json
+      description: Create a confirmed booking for 1 to 6 seats. The user must own
+        valid Redis holds for all requested seats. The showtime must be in the future
+        and all seats must belong to its screen. The total price is calculated by
+        the server.
+      parameters:
+      - description: Showtime UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Seat IDs to book
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_booking.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_booking.BookingView'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Confirm a seat booking
+      tags:
+      - Bookings
+  /showtimes/{id}/holds:
+    post:
+      consumes:
+      - application/json
+      description: Temporarily reserve 1 to 6 seats for the authenticated user. The
+        showtime must exist and must not have started. All seats must belong to the
+        showtime's screen and must not already be booked or held by another user.
+        Holds expire automatically after the configured Redis TTL.
+      parameters:
+      - description: Showtime UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Seat IDs to hold
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_hold.Request'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_hold.Result'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_hold.SeatsUnavailableResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Hold seats for a showtime
+      tags:
+      - Seat Holds
+  /showtimes/{id}/seats:
+    get:
+      description: Retrieve all seats for a showtime grouped by row. Each seat has
+        a status of free, held, or booked. Booked seats take precedence over temporary
+        Redis holds.
+      parameters:
+      - description: Showtime UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_booking.SeatMap'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse'
+      summary: Get showtime seat availability
+      tags:
+      - Bookings
   /theaters:
     get:
       description: Retrieve all active theaters ordered by creation date. Returns

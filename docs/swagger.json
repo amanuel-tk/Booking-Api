@@ -111,6 +111,158 @@
                 }
             }
         },
+        "/me/bookings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve up to 100 bookings belonging to the authenticated user, ordered by creation date descending. Includes both confirmed and cancelled bookings.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "List my bookings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_booking.BookingView"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/bookings/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a booking by UUID. Only bookings belonging to the authenticated user can be accessed.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get my booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Booking UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_booking.BookingView"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/bookings/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancel a confirmed booking belonging to the authenticated user. Cancellation is allowed only when the showtime starts at least 2 hours from the current time. Successfully cancelled bookings release their seats for future bookings.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Cancel my booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Booking UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_booking.BookingView"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/movies": {
             "get": {
                 "description": "Retrieve active movies with optional title search and pagination. Results are ordered by release date descending. Default page is 1, default limit is 20, and maximum limit is 100.",
@@ -490,6 +642,202 @@
                 }
             }
         },
+        "/showtimes/{id}/bookings": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a confirmed booking for 1 to 6 seats. The user must own valid Redis holds for all requested seats. The showtime must be in the future and all seats must belong to its screen. The total price is calculated by the server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Confirm a seat booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Showtime UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Seat IDs to book",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_booking.CreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_booking.BookingView"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/showtimes/{id}/holds": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Temporarily reserve 1 to 6 seats for the authenticated user. The showtime must exist and must not have started. All seats must belong to the showtime's screen and must not already be booked or held by another user. Holds expire automatically after the configured Redis TTL.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Seat Holds"
+                ],
+                "summary": "Hold seats for a showtime",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Showtime UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Seat IDs to hold",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_hold.Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_hold.Result"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_hold.SeatsUnavailableResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/showtimes/{id}/seats": {
+            "get": {
+                "description": "Retrieve all seats for a showtime grouped by row. Each seat has a status of free, held, or booked. Booked seats take precedence over temporary Redis holds.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get showtime seat availability",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Showtime UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_booking.SeatMap"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_amanuel-tk_Booking-Api_internal_httpx.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/theaters": {
             "get": {
                 "description": "Retrieve all active theaters ordered by creation date. Returns an empty array if no theaters exist.",
@@ -719,6 +1067,174 @@
             "properties": {
                 "error": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_booking.BookingView": {
+            "type": "object",
+            "properties": {
+                "cancelled_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "movie_title": {
+                    "type": "string"
+                },
+                "screen_name": {
+                    "type": "string"
+                },
+                "seats": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "showtime_id": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "theater_name": {
+                    "type": "string"
+                },
+                "total_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_booking.CreateRequest": {
+            "type": "object",
+            "properties": {
+                "seat_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_booking.SeatMap": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "integer"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_booking.SeatMapRow"
+                    }
+                },
+                "screen_id": {
+                    "type": "string"
+                },
+                "showtime_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_booking.SeatMapRow": {
+            "type": "object",
+            "properties": {
+                "row": {
+                    "type": "string"
+                },
+                "seats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_booking.SeatView"
+                    }
+                }
+            }
+        },
+        "internal_booking.SeatStatus": {
+            "type": "string",
+            "enum": [
+                "free",
+                "held",
+                "booked"
+            ],
+            "x-enum-varnames": [
+                "SeatFree",
+                "SeatHeld",
+                "SeatBooked"
+            ]
+        },
+        "internal_booking.SeatView": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "number": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "status": {
+                    "enum": [
+                        "free",
+                        "held",
+                        "booked"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/internal_booking.SeatStatus"
+                        }
+                    ]
+                }
+            }
+        },
+        "internal_hold.Request": {
+            "type": "object",
+            "properties": {
+                "seat_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_hold.Result": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "seat_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "showtime_id": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            }
+        },
+        "internal_hold.SeatsUnavailableResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "some seats are not available"
+                },
+                "seat_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

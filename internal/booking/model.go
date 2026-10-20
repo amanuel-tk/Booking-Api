@@ -19,7 +19,7 @@ const (
 )
 
 type CreateRequest struct {
-	SeatIDs []string `json:"seat_ids"`
+	SeatIDs []string `json:"seat_ids" minItems:"1" maxItems:"6"`
 }
 
 type NewBooking struct {
@@ -46,9 +46,9 @@ type BookingView struct {
 }
 
 type SeatView struct {
-	ID     string     `json:"id"`
-	Number int        `json:"number"`
-	Status SeatStatus `json:"status"`
+	ID     string     `json:"id" format:"uuid"`
+	Number int        `json:"number" example:"1"`
+	Status SeatStatus `json:"status" enums:"free,held,booked"`
 }
 
 type SeatMapRow struct {
